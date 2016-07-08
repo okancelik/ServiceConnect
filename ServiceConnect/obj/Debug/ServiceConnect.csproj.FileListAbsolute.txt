@@ -1,0 +1,28 @@
+D:\Okan'sProjects\workSpace\ServiceConnect\ServiceConnect\bin\Debug\ServiceConnect.dll
+D:\Okan'sProjects\workSpace\ServiceConnect\ServiceConnect\bin\Debug\ServiceConnect.pdb
+D:\Okan'sProjects\workSpace\ServiceConnect\ServiceConnect\bin\Debug\Newtonsoft.Json.dll
+D:\Okan'sProjects\workSpace\ServiceConnect\ServiceConnect\bin\Debug\Newtonsoft.Json.xml
+D:\Okan'sProjects\workSpace\ServiceConnect\ServiceConnect\obj\Debug\ServiceConnect.csprojResolveAssemblyReference.cache
+D:\Okan'sProjects\workSpace\ServiceConnect\ServiceConnect\obj\Debug\ServiceConnect.dll
+D:\Okan'sProjects\workSpace\ServiceConnect\ServiceConnect\obj\Debug\ServiceConnect.pdb
+C:\Users\Okan\Documents\Visual Studio 2015\Projects\ServiceConnect\ServiceConnect\bin\Debug\ServiceConnect.dll
+C:\Users\Okan\Documents\Visual Studio 2015\Projects\ServiceConnect\ServiceConnect\bin\Debug\ServiceConnect.pdb
+C:\Users\Okan\Documents\Visual Studio 2015\Projects\ServiceConnect\ServiceConnect\bin\Debug\Newtonsoft.Json.dll
+C:\Users\Okan\Documents\Visual Studio 2015\Projects\ServiceConnect\ServiceConnect\bin\Debug\Newtonsoft.Json.xml
+C:\Users\Okan\Documents\Visual Studio 2015\Projects\ServiceConnect\ServiceConnect\obj\Debug\ServiceConnect.csprojResolveAssemblyReference.cache
+C:\Users\Okan\Documents\Visual Studio 2015\Projects\ServiceConnect\ServiceConnect\obj\Debug\ServiceConnect.dll
+C:\Users\Okan\Documents\Visual Studio 2015\Projects\ServiceConnect\ServiceConnect\obj\Debug\ServiceConnect.pdb
+C:\Users\okanc\Source\Workspaces\workSpace\ServiceConnect\ServiceConnect\bin\Debug\ServiceConnect.dll
+C:\Users\okanc\Source\Workspaces\workSpace\ServiceConnect\ServiceConnect\bin\Debug\ServiceConnect.pdb
+C:\Users\okanc\Source\Workspaces\workSpace\ServiceConnect\ServiceConnect\bin\Debug\Newtonsoft.Json.dll
+C:\Users\okanc\Source\Workspaces\workSpace\ServiceConnect\ServiceConnect\bin\Debug\Newtonsoft.Json.xml
+C:\Users\okanc\Source\Workspaces\workSpace\ServiceConnect\ServiceConnect\obj\Debug\ServiceConnect.csprojResolveAssemblyReference.cache
+C:\Users\okanc\Source\Workspaces\workSpace\ServiceConnect\ServiceConnect\obj\Debug\ServiceConnect.dll
+C:\Users\okanc\Source\Workspaces\workSpace\ServiceConnect\ServiceConnect\obj\Debug\ServiceConnect.pdb
+C:\Users\Okan\Desktop\ServiceConnect-master\ServiceConnect\bin\Debug\ServiceConnect.dll
+C:\Users\Okan\Desktop\ServiceConnect-master\ServiceConnect\bin\Debug\ServiceConnect.pdb
+C:\Users\Okan\Desktop\ServiceConnect-master\ServiceConnect\bin\Debug\Newtonsoft.Json.dll
+C:\Users\Okan\Desktop\ServiceConnect-master\ServiceConnect\bin\Debug\Newtonsoft.Json.xml
+C:\Users\Okan\Desktop\ServiceConnect-master\ServiceConnect\obj\Debug\ServiceConnect.csprojResolveAssemblyReference.cache
+C:\Users\Okan\Desktop\ServiceConnect-master\ServiceConnect\obj\Debug\ServiceConnect.dll
+C:\Users\Okan\Desktop\ServiceConnect-master\ServiceConnect\obj\Debug\ServiceConnect.pdb
