@@ -14,19 +14,19 @@ namespace ServiceConnectTest
 
         private static void FillData()
         {
-            HttpServiceRequest req = new HttpServiceRequest();
+            //HttpServiceRequest req = new HttpServiceRequest();
 
-            RequestObject obj = new RequestObject();
+            //RequestObject obj = new RequestObject();
 
-            obj.Method = "POST";
-            obj.Content_Type = "application/x-www-form-urlencoded";
-            obj.Body = "grant_type=password&username=test&password=1234";
+            //obj.Method = "POST";
+            //obj.Content_Type = "application/x-www-form-urlencoded";
+            //obj.Body = "grant_type=password&username=test&password=1234";
 
-            string token = req.REQUEST("http://192.168.1.79/ExampleApiTokenBased/Token", obj);
+            //string token = req.REQUEST("http://192.168.1.79/ExampleApiTokenBased/Token", obj);
 
-            HttpServiceRequest requ = new HttpServiceRequest(ConvertStringToToken(token));
+            //HttpServiceRequest requ = new HttpServiceRequest(ConvertStringToToken(token));
 
-            string response = requ.GET("http://192.168.1.79/ExampleApiTokenBased/api/Product/Gets");
+            //string response = requ.GET("http://192.168.1.79/ExampleApiTokenBased/api/Product/Gets");
 
         }
 
@@ -34,8 +34,8 @@ namespace ServiceConnectTest
         {
             Token tk = new Token();
             string[] baseToken = strToken.Replace('{', ' ').Trim().
-                                         Replace('}', ' ').Trim().
-                                         Replace('\"', ' ').Trim().Split(',');
+                                          Replace('}', ' ').Trim().
+                                          Replace('\"', ' ').Trim().Split(',');
             foreach (var item in baseToken)
             {
                 if (item.Split(':')[0].Trim() == "access_token")
