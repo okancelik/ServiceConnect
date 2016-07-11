@@ -1,6 +1,6 @@
-﻿using System.Collections.Generic;
-using ServiceConnect;
-using ServiceConnectTest.Models;
+﻿using ServiceConnect;
+using ServiceConnect.Object;
+
 
 namespace ServiceConnectTest
 {
@@ -12,21 +12,23 @@ namespace ServiceConnectTest
             FillData();
         }
 
-        private static void FillData()
+        private async static void FillData()
         {
-            //HttpServiceRequest req = new HttpServiceRequest();
 
-            //RequestObject obj = new RequestObject();
+            // Token Based Authentication.
+            HttpServiceAsyncRequest httpServiceRequest = new HttpServiceAsyncRequest("userName","password","tokenUrl");
 
-            //obj.Method = "POST";
-            //obj.Content_Type = "application/x-www-form-urlencoded";
-            //obj.Body = "grant_type=password&username=test&password=1234";
+            Request obj = new Request();
 
-            //string token = req.REQUEST("http://192.168.1.79/ExampleApiTokenBased/Token", obj);
+            obj.Method = "POST";
+            obj.Content_Type = "application/x-www-form-urlencoded";
+            obj.Body = "grant_type=password&username=test&password=1234";
 
-            //HttpServiceRequest requ = new HttpServiceRequest(ConvertStringToToken(token));
+            string token = await httpServiceRequest.REQUEST("http://192.168.1.79/ExampleApiTokenBased/Token", obj);
 
-            //string response = requ.GET("http://192.168.1.79/ExampleApiTokenBased/api/Product/Gets");
+            HttpServiceRequest requ = new HttpServiceRequest(ConvertStringToToken(token));
+
+            string response = requ.GET("http://192.168.1.79/ExampleApiTokenBased/api/Product/Gets");
 
         }
 

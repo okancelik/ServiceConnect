@@ -26,3 +26,9 @@ C:\Users\Okan\Desktop\ServiceConnect-master\ServiceConnect\bin\Debug\Newtonsoft.
 C:\Users\Okan\Desktop\ServiceConnect-master\ServiceConnect\obj\Debug\ServiceConnect.csprojResolveAssemblyReference.cache
 C:\Users\Okan\Desktop\ServiceConnect-master\ServiceConnect\obj\Debug\ServiceConnect.dll
 C:\Users\Okan\Desktop\ServiceConnect-master\ServiceConnect\obj\Debug\ServiceConnect.pdb
+D:\GitHub\ServiceConnect\ServiceConnect\bin\Debug\ServiceConnect.dll
+D:\GitHub\ServiceConnect\ServiceConnect\bin\Debug\ServiceConnect.pdb
+D:\GitHub\ServiceConnect\ServiceConnect\bin\Debug\Newtonsoft.Json.dll
+D:\GitHub\ServiceConnect\ServiceConnect\bin\Debug\Newtonsoft.Json.xml
+D:\GitHub\ServiceConnect\ServiceConnect\obj\Debug\ServiceConnect.dll
+D:\GitHub\ServiceConnect\ServiceConnect\obj\Debug\ServiceConnect.pdb

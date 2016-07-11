@@ -48,16 +48,19 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="RequestObject.cs" />
-    <Compile Include="TokenManager.cs" />
-    <Compile Include="HttpServiceAsyncRequest.cs" />
-    <Compile Include="HttpServiceRequest.cs" />
+    <Compile Include="Object\Request.cs" />
+    <Compile Include="Object\Token.cs" />
+    <Compile Include="Public\HttpServiceAsyncRequest.cs" />
+    <Compile Include="Public\HttpServiceRequest.cs" />
+    <Compile Include="Private\TokenManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Token.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="document.docx" />
+    <None Include="document.pdf" />
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
