@@ -50,6 +50,8 @@ namespace ServiceConnect
         /// <param name="TokenUrl"></param>
         public HttpServiceAsyncRequest(string UserName, string Password, string TokenUrl)
         {
+            TokenManager.TokenClear();
+
             this.UserName = UserName;
             this.Password = Password;
             this.TokenUrl = TokenUrl;

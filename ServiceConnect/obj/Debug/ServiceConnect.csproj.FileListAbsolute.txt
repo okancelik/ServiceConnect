@@ -32,3 +32,4 @@ D:\GitHub\ServiceConnect\ServiceConnect\bin\Debug\Newtonsoft.Json.dll
 D:\GitHub\ServiceConnect\ServiceConnect\bin\Debug\Newtonsoft.Json.xml
 D:\GitHub\ServiceConnect\ServiceConnect\obj\Debug\ServiceConnect.dll
 D:\GitHub\ServiceConnect\ServiceConnect\obj\Debug\ServiceConnect.pdb
+D:\GitHub\ServiceConnect\ServiceConnect\obj\Debug\ServiceConnect.csprojResolveAssemblyReference.cache
