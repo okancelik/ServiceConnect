@@ -13,12 +13,16 @@ namespace ServiceConnect
     {
         private string UserName, Password, TokenUrl, TokenString = String.Empty;
 
-        private bool IsTokenBased = false;
+        private bool IsTokenBased    = false;
+        private bool IsAuthorization = true;
 
         /// <summary>
         /// Not Authentication.
         /// </summary>
-        public HttpServiceAsyncRequest() { }
+        public HttpServiceAsyncRequest()
+        {
+            IsAuthorization = false;
+        }
 
         /// <summary>
         /// Basic Authentication.
@@ -37,7 +41,6 @@ namespace ServiceConnect
         /// <param name="token"></param>
         public HttpServiceAsyncRequest(string token)
         {
-            TokenManager.TokenClear();
             TokenString = token;
             IsTokenBased = true;
         }
@@ -50,8 +53,6 @@ namespace ServiceConnect
         /// <param name="TokenUrl"></param>
         public HttpServiceAsyncRequest(string UserName, string Password, string TokenUrl)
         {
-            TokenManager.TokenClear();
-
             this.UserName = UserName;
             this.Password = Password;
             this.TokenUrl = TokenUrl;
@@ -71,18 +72,6 @@ namespace ServiceConnect
                 return TokenString;
         }
 
-        /// <summary>
-        /// Credential oluşturur.
-        /// </summary>
-        /// <param name="url"></param>
-        /// <returns></returns>
-        private CredentialCache GetCredential(string url)
-        {
-            CredentialCache credentialCache = new CredentialCache();
-            credentialCache.Add(new Uri(url), "Basic", new NetworkCredential(UserName, Password));
-
-            return credentialCache;
-        }
 
         /// <summary>
         /// Basic Kod üretir.
@@ -103,47 +92,26 @@ namespace ServiceConnect
         /// <returns></returns>
         public async Task<T> GET<T>(string requestUrl, string contentType = "application/json")
         {
-            try
-            {
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
-                request.Method = WebRequestMethods.Http.Get;
-                request.Accept = contentType;
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
+            request.Method = WebRequestMethods.Http.Get;
+            request.ContentType = contentType;
 
+            if (IsAuthorization)
+            {
                 if (!IsTokenBased)
-                    request.Credentials = GetCredential(requestUrl);
+                    request.Headers.Add("Authorization", GetBasic());
                 else
                     request.Headers.Add("Authorization", GetToken());
-
-                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-                StreamReader reader = new StreamReader(response.GetResponseStream());
-                string jsonData = reader.ReadToEnd();
-                var obj = JsonConvert.DeserializeObject<T>(jsonData);
-                reader.Close();
-                response.Close();
-
-                return obj;
             }
-            catch (Exception)
-            {
-                TokenManager.TokenClear();
 
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
-                request.Method = WebRequestMethods.Http.Get;
-                request.Accept = "application/json";
-                if (!IsTokenBased)
-                    request.Credentials = GetCredential(requestUrl);
-                else
-                    request.Headers.Add("Authorization", GetToken());
+            HttpWebResponse response =  (HttpWebResponse)request.GetResponse();
+            StreamReader reader =  new StreamReader(response.GetResponseStream());
+            string jsonData = reader.ReadToEnd();
+            var obj = JsonConvert.DeserializeObject<T>(jsonData);
+            reader.Close();
+            response.Close();
 
-                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-                StreamReader reader = new StreamReader(response.GetResponseStream());
-                string jsonData = reader.ReadToEnd();
-                var obj = JsonConvert.DeserializeObject<T>(jsonData);
-                reader.Close();
-                response.Close();
-
-                return obj;
-            }
+            return obj;
         }
 
 
@@ -157,47 +125,25 @@ namespace ServiceConnect
         public async Task<string> GET(string requestUrl, string contentType = "application/json")
         {
 
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
+            request.Method = WebRequestMethods.Http.Get;
+            request.Accept = contentType;
 
-            try
+            if (IsAuthorization)
             {
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
-                request.Method = WebRequestMethods.Http.Get;
-                request.Accept = contentType;
-
-                if (!IsTokenBased)
-                    request.Credentials = GetCredential(requestUrl);
-                else
-                    request.Headers.Add("Authorization", GetToken());
-
-                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-                StreamReader reader = new StreamReader(response.GetResponseStream());
-                string jsonData = reader.ReadToEnd();
-                reader.Close();
-                response.Close();
-
-                return jsonData;
-            }
-            catch (Exception)
-            {
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
-                request.Method = WebRequestMethods.Http.Get;
-                request.Accept = contentType;
-
-                TokenManager.TokenClear();
-
                 if (!IsTokenBased)
                     request.Headers.Add("Authorization", GetBasic());
                 else
                     request.Headers.Add("Authorization", GetToken());
-
-                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-                StreamReader reader = new StreamReader(response.GetResponseStream());
-                string jsonData = reader.ReadToEnd();
-                reader.Close();
-                response.Close();
-
-                return jsonData;
             }
+
+            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+            StreamReader reader = new StreamReader(response.GetResponseStream());
+            string jsonData = reader.ReadToEnd();
+            reader.Close();
+            response.Close();
+
+            return jsonData;
         }
 
 
@@ -211,72 +157,38 @@ namespace ServiceConnect
         /// <returns></returns>
         public async Task<T> POST<T>(string requestUrl, object responseObject, string contentType = "application/json")
         {
-            try
+            string postData = JsonConvert.SerializeObject(responseObject);
+            byte[] data = Encoding.UTF8.GetBytes(postData);
+
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
+            request.Method = WebRequestMethods.Http.Post;
+            request.ContentType = contentType;
+
+            if (IsAuthorization)
             {
-                string postData = JsonConvert.SerializeObject(responseObject);
-                byte[] data = Encoding.UTF8.GetBytes(postData);
-
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
-                request.Method = WebRequestMethods.Http.Post;
-                request.ContentType = contentType;
-
-                if (!IsTokenBased)
-                    request.Credentials = GetCredential(requestUrl);
-                else
-                    request.Headers.Add("Authorization", GetToken());
-
-                request.ContentLength = data.Length;
-
-                using (Stream newStream = request.GetRequestStream())
-                {
-                    newStream.Write(data, 0, data.Length);
-                    newStream.Flush();
-                    newStream.Close();
-                }
-
-                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-                StreamReader reader = new StreamReader(response.GetResponseStream());
-                string jsonData = reader.ReadToEnd();
-                var obj = JsonConvert.DeserializeObject<T>(jsonData);
-                reader.Close();
-                response.Close();
-
-                return obj;
-            }
-            catch (Exception)
-            {
-                string postData = JsonConvert.SerializeObject(responseObject);
-                byte[] data = Encoding.UTF8.GetBytes(postData);
-
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
-                request.Method = WebRequestMethods.Http.Post;
-                request.ContentType = "application/json";
-
-                TokenManager.TokenClear();
-
                 if (!IsTokenBased)
                     request.Headers.Add("Authorization", GetBasic());
                 else
                     request.Headers.Add("Authorization", GetToken());
-
-                request.ContentLength = data.Length;
-
-                using (Stream newStream = request.GetRequestStream())
-                {
-                    newStream.Write(data, 0, data.Length);
-                    newStream.Flush();
-                    newStream.Close();
-                }
-
-                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-                StreamReader reader = new StreamReader(response.GetResponseStream());
-                string jsonData = reader.ReadToEnd();
-                var obj = JsonConvert.DeserializeObject<T>(jsonData);
-                reader.Close();
-                response.Close();
-
-                return obj;
             }
+
+            request.ContentLength = data.Length;
+
+            using (Stream newStream = request.GetRequestStream())
+            {
+                newStream.Write(data, 0, data.Length);
+                newStream.Flush();
+                newStream.Close();
+            }
+
+            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+            StreamReader reader = new StreamReader(response.GetResponseStream());
+            string jsonData = reader.ReadToEnd();
+            var obj = JsonConvert.DeserializeObject<T>(jsonData);
+            reader.Close();
+            response.Close();
+
+            return obj;
         }
 
         /// <summary>
@@ -289,70 +201,37 @@ namespace ServiceConnect
         /// <returns></returns>
         public async Task<T> POST<T>(string requestUrl, string responseObject, string contentType = "application/json")
         {
-            try
+            byte[] data = Encoding.UTF8.GetBytes(responseObject);
+
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
+            request.Method = WebRequestMethods.Http.Post;
+            request.ContentType = contentType;
+
+            if (IsAuthorization)
             {
-                byte[] data = Encoding.UTF8.GetBytes(responseObject);
-
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
-                request.Method = WebRequestMethods.Http.Post;
-                request.ContentType = contentType;
-
-                if (!IsTokenBased)
-                    request.Credentials = GetCredential(requestUrl);
-                else
-                    request.Headers.Add("Authorization", GetToken());
-
-                request.ContentLength = data.Length;
-
-                using (Stream newStream = request.GetRequestStream())
-                {
-                    newStream.Write(data, 0, data.Length);
-                    newStream.Flush();
-                    newStream.Close();
-                }
-
-                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-                StreamReader reader = new StreamReader(response.GetResponseStream());
-                string jsonData = reader.ReadToEnd();
-                var obj = JsonConvert.DeserializeObject<T>(jsonData);
-                reader.Close();
-                response.Close();
-
-                return obj;
-            }
-            catch (Exception)
-            {
-                byte[] data = Encoding.UTF8.GetBytes(responseObject);
-
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
-                request.Method = WebRequestMethods.Http.Post;
-                request.ContentType = contentType;
-
-                TokenManager.TokenClear();
-
                 if (!IsTokenBased)
                     request.Headers.Add("Authorization", GetBasic());
                 else
                     request.Headers.Add("Authorization", GetToken());
-
-                request.ContentLength = data.Length;
-
-                using (Stream newStream = request.GetRequestStream())
-                {
-                    newStream.Write(data, 0, data.Length);
-                    newStream.Flush();
-                    newStream.Close();
-                }
-
-                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-                StreamReader reader = new StreamReader(response.GetResponseStream());
-                string jsonData = reader.ReadToEnd();
-                var obj = JsonConvert.DeserializeObject<T>(jsonData);
-                reader.Close();
-                response.Close();
-
-                return obj;
             }
+
+            request.ContentLength = data.Length;
+
+            using (Stream newStream = request.GetRequestStream())
+            {
+                newStream.Write(data, 0, data.Length);
+                newStream.Flush();
+                newStream.Close();
+            }
+
+            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+            StreamReader reader = new StreamReader(response.GetResponseStream());
+            string jsonData = reader.ReadToEnd();
+            var obj = JsonConvert.DeserializeObject<T>(jsonData);
+            reader.Close();
+            response.Close();
+
+            return obj;
         }
 
         /// <summary>
@@ -365,70 +244,37 @@ namespace ServiceConnect
         /// <returns></returns>
         public async Task<string> POST(string requestUrl, object responseObject, string contentType = "application/json")
         {
-            try
+            string postData = JsonConvert.SerializeObject(responseObject);
+            byte[] data = Encoding.UTF8.GetBytes(postData);
+
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
+            request.Method = WebRequestMethods.Http.Post;
+            request.ContentType = contentType;
+
+            if (IsAuthorization)
             {
-                string postData = JsonConvert.SerializeObject(responseObject);
-                byte[] data = Encoding.UTF8.GetBytes(postData);
-
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
-                request.Method = WebRequestMethods.Http.Post;
-                request.ContentType = contentType;
-
                 if (!IsTokenBased)
-                    request.Credentials = GetCredential(requestUrl);
+                    request.Headers.Add("Authorization", GetBasic());
                 else
                     request.Headers.Add("Authorization", GetToken());
-
-                request.ContentLength = data.Length;
-
-                using (Stream newStream = request.GetRequestStream())
-                {
-                    newStream.Write(data, 0, data.Length);
-                    newStream.Flush();
-                    newStream.Close();
-                }
-
-                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-                StreamReader reader = new StreamReader(response.GetResponseStream());
-                string jsonData = reader.ReadToEnd();
-                reader.Close();
-                response.Close();
-
-                return jsonData;
             }
-            catch (Exception)
+
+            request.ContentLength = data.Length;
+
+            using (Stream newStream = request.GetRequestStream())
             {
-                TokenManager.TokenClear();
-
-                string postData = JsonConvert.SerializeObject(responseObject);
-                byte[] data = Encoding.UTF8.GetBytes(postData);
-
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
-                request.Method = WebRequestMethods.Http.Post;
-                request.ContentType = "application/json";
-
-                if (!IsTokenBased)
-                    request.Credentials = GetCredential(requestUrl);
-                else
-                    request.Headers.Add("Authorization", GetToken());
-
-                request.ContentLength = data.Length;
-
-                using (Stream newStream = request.GetRequestStream())
-                {
-                    newStream.Write(data, 0, data.Length);
-                    newStream.Flush();
-                    newStream.Close();
-                }
-
-                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-                StreamReader reader = new StreamReader(response.GetResponseStream());
-                string jsonData = reader.ReadToEnd();
-                reader.Close();
-                response.Close();
-
-                return jsonData;
+                newStream.Write(data, 0, data.Length);
+                newStream.Flush();
+                newStream.Close();
             }
+
+            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+            StreamReader reader = new StreamReader(response.GetResponseStream());
+            string jsonData = reader.ReadToEnd();
+            reader.Close();
+            response.Close();
+
+            return jsonData;
         }
 
         /// <summary>
@@ -441,68 +287,36 @@ namespace ServiceConnect
         /// <returns></returns>
         public async Task<string> POST(string requestUrl, string responseObject, string contentType = "application/json")
         {
-            try
+            byte[] data = Encoding.UTF8.GetBytes(responseObject);
+
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
+            request.Method = WebRequestMethods.Http.Post;
+            request.ContentType = contentType;
+
+            if (IsAuthorization)
             {
-                byte[] data = Encoding.UTF8.GetBytes(responseObject);
-
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
-                request.Method = WebRequestMethods.Http.Post;
-                request.ContentType = contentType;
-
-                if (!IsTokenBased)
-                    request.Credentials = GetCredential(requestUrl);
-                else
-                    request.Headers.Add("Authorization", GetToken());
-
-                request.ContentLength = data.Length;
-
-                using (Stream newStream = request.GetRequestStream())
-                {
-                    newStream.Write(data, 0, data.Length);
-                    newStream.Flush();
-                    newStream.Close();
-                }
-
-                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-                StreamReader reader = new StreamReader(response.GetResponseStream());
-                string jsonData = reader.ReadToEnd();
-                reader.Close();
-                response.Close();
-
-                return jsonData;
-            }
-            catch (Exception)
-            {
-                TokenManager.TokenClear();
-
-                byte[] data = Encoding.UTF8.GetBytes(responseObject);
-
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
-                request.Method = WebRequestMethods.Http.Post;
-                request.ContentType = contentType;
-
                 if (!IsTokenBased)
                     request.Headers.Add("Authorization", GetBasic());
                 else
                     request.Headers.Add("Authorization", GetToken());
-
-                request.ContentLength = data.Length;
-
-                using (Stream newStream = request.GetRequestStream())
-                {
-                    newStream.Write(data, 0, data.Length);
-                    newStream.Flush();
-                    newStream.Close();
-                }
-
-                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-                StreamReader reader = new StreamReader(response.GetResponseStream());
-                string jsonData = reader.ReadToEnd();
-                reader.Close();
-                response.Close();
-
-                return jsonData;
             }
+
+            request.ContentLength = data.Length;
+
+            using (Stream newStream = request.GetRequestStream())
+            {
+                newStream.Write(data, 0, data.Length);
+                newStream.Flush();
+                newStream.Close();
+            }
+
+            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+            StreamReader reader = new StreamReader(response.GetResponseStream());
+            string jsonData = reader.ReadToEnd();
+            reader.Close();
+            response.Close();
+
+            return jsonData;
         }
 
         /// <summary>
@@ -516,72 +330,38 @@ namespace ServiceConnect
         /// <returns></returns>
         public async Task<T> PUT<T>(string requestUrl, object responseObject, string contentType = "application/json")
         {
-            try
+            string postData = JsonConvert.SerializeObject(responseObject);
+            byte[] data = Encoding.UTF8.GetBytes(postData);
+
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
+            request.Method = WebRequestMethods.Http.Put;
+            request.ContentType = contentType;
+
+            if (IsAuthorization)
             {
-                string postData = JsonConvert.SerializeObject(responseObject);
-                byte[] data = Encoding.UTF8.GetBytes(postData);
-
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
-                request.Method = WebRequestMethods.Http.Put;
-                request.ContentType = contentType;
-
                 if (!IsTokenBased)
-                    request.Credentials = GetCredential(requestUrl);
+                    request.Headers.Add("Authorization", GetBasic());
                 else
                     request.Headers.Add("Authorization", GetToken());
-
-                request.ContentLength = data.Length;
-
-                using (Stream newStream = request.GetRequestStream())
-                {
-                    newStream.Write(data, 0, data.Length);
-                    newStream.Flush();
-                    newStream.Close();
-                }
-
-                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-                StreamReader reader = new StreamReader(response.GetResponseStream());
-                string jsonData = reader.ReadToEnd();
-                var obj = JsonConvert.DeserializeObject<T>(jsonData);
-                reader.Close();
-                response.Close();
-
-                return obj;
             }
-            catch (Exception)
+
+            request.ContentLength = data.Length;
+
+            using (Stream newStream = request.GetRequestStream())
             {
-                TokenManager.TokenClear();
-
-                string postData = JsonConvert.SerializeObject(responseObject);
-                byte[] data = Encoding.UTF8.GetBytes(postData);
-
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
-                request.Method = WebRequestMethods.Http.Put;
-                request.ContentType = "application/json";
-
-                if (!IsTokenBased)
-                    request.Credentials = GetCredential(requestUrl);
-                else
-                    request.Headers.Add("Authorization", GetToken());
-
-                request.ContentLength = data.Length;
-
-                using (Stream newStream = request.GetRequestStream())
-                {
-                    newStream.Write(data, 0, data.Length);
-                    newStream.Flush();
-                    newStream.Close();
-                }
-
-                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-                StreamReader reader = new StreamReader(response.GetResponseStream());
-                string jsonData = reader.ReadToEnd();
-                var obj = JsonConvert.DeserializeObject<T>(jsonData);
-                reader.Close();
-                response.Close();
-
-                return obj;
+                newStream.Write(data, 0, data.Length);
+                newStream.Flush();
+                newStream.Close();
             }
+
+            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+            StreamReader reader = new StreamReader(response.GetResponseStream());
+            string jsonData = reader.ReadToEnd();
+            var obj = JsonConvert.DeserializeObject<T>(jsonData);
+            reader.Close();
+            response.Close();
+
+            return obj;
         }
 
         /// <summary>
@@ -595,70 +375,37 @@ namespace ServiceConnect
         /// <returns></returns>
         public async Task<string> PUT(string requestUrl, object responseObject, string contentType = "application/json")
         {
-            try
+            string postData = JsonConvert.SerializeObject(responseObject);
+            byte[] data = Encoding.UTF8.GetBytes(postData);
+
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
+            request.Method = WebRequestMethods.Http.Put;
+            request.ContentType = contentType;
+
+            if (IsAuthorization)
             {
-                string postData = JsonConvert.SerializeObject(responseObject);
-                byte[] data = Encoding.UTF8.GetBytes(postData);
-
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
-                request.Method = WebRequestMethods.Http.Put;
-                request.ContentType = contentType;
-
                 if (!IsTokenBased)
-                    request.Credentials = GetCredential(requestUrl);
+                    request.Headers.Add("Authorization", GetBasic());
                 else
                     request.Headers.Add("Authorization", GetToken());
-
-                request.ContentLength = data.Length;
-
-                using (Stream newStream = request.GetRequestStream())
-                {
-                    newStream.Write(data, 0, data.Length);
-                    newStream.Flush();
-                    newStream.Close();
-                }
-
-                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-                StreamReader reader = new StreamReader(response.GetResponseStream());
-                string jsonData = reader.ReadToEnd();
-                reader.Close();
-                response.Close();
-
-                return jsonData;
             }
-            catch (Exception)
+
+            request.ContentLength = data.Length;
+
+            using (Stream newStream = request.GetRequestStream())
             {
-                TokenManager.TokenClear();
-
-                string postData = JsonConvert.SerializeObject(responseObject);
-                byte[] data = Encoding.UTF8.GetBytes(postData);
-
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
-                request.Method = WebRequestMethods.Http.Put;
-                request.ContentType = "application/json";
-
-                if (!IsTokenBased)
-                    request.Credentials = GetCredential(requestUrl);
-                else
-                    request.Headers.Add("Authorization", GetToken());
-
-                request.ContentLength = data.Length;
-
-                using (Stream newStream = request.GetRequestStream())
-                {
-                    newStream.Write(data, 0, data.Length);
-                    newStream.Flush();
-                    newStream.Close();
-                }
-
-                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-                StreamReader reader = new StreamReader(response.GetResponseStream());
-                string jsonData = reader.ReadToEnd();
-                reader.Close();
-                response.Close();
-
-                return jsonData;
+                newStream.Write(data, 0, data.Length);
+                newStream.Flush();
+                newStream.Close();
             }
+
+            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+            StreamReader reader = new StreamReader(response.GetResponseStream());
+            string jsonData = reader.ReadToEnd();
+            reader.Close();
+            response.Close();
+
+            return jsonData;
         }
 
         /// <summary>
@@ -672,71 +419,38 @@ namespace ServiceConnect
         /// <returns></returns>
         public async Task<T> PUT<T>(string requestUrl, string responseObject, string contentType = "application/json")
         {
-            try
+            string postData = JsonConvert.SerializeObject(responseObject);
+            byte[] data = Encoding.UTF8.GetBytes(postData);
+
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
+            request.Method = WebRequestMethods.Http.Put;
+            request.ContentType = contentType;
+
+            if (IsAuthorization)
             {
-                byte[] data = Encoding.UTF8.GetBytes(responseObject);
-
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
-                request.Method = WebRequestMethods.Http.Put;
-                request.ContentType = contentType;
-
-                if (!IsTokenBased)
-                    request.Credentials = GetCredential(requestUrl);
-                else
-                    request.Headers.Add("Authorization", GetToken());
-
-                request.ContentLength = data.Length;
-
-                using (Stream newStream = request.GetRequestStream())
-                {
-                    newStream.Write(data, 0, data.Length);
-                    newStream.Flush();
-                    newStream.Close();
-                }
-
-                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-                StreamReader reader = new StreamReader(response.GetResponseStream());
-                string jsonData = reader.ReadToEnd();
-                var obj = JsonConvert.DeserializeObject<T>(jsonData);
-                reader.Close();
-                response.Close();
-
-                return obj;
-            }
-            catch (Exception)
-            {
-                TokenManager.TokenClear();
-
-                string postData = JsonConvert.SerializeObject(responseObject);
-                byte[] data = Encoding.UTF8.GetBytes(postData);
-
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
-                request.Method = WebRequestMethods.Http.Put;
-                request.ContentType = contentType;
-
                 if (!IsTokenBased)
                     request.Headers.Add("Authorization", GetBasic());
                 else
                     request.Headers.Add("Authorization", GetToken());
-
-                request.ContentLength = data.Length;
-
-                using (Stream newStream = request.GetRequestStream())
-                {
-                    newStream.Write(data, 0, data.Length);
-                    newStream.Flush();
-                    newStream.Close();
-                }
-
-                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-                StreamReader reader = new StreamReader(response.GetResponseStream());
-                string jsonData = reader.ReadToEnd();
-                var obj = JsonConvert.DeserializeObject<T>(jsonData);
-                reader.Close();
-                response.Close();
-
-                return obj;
             }
+
+            request.ContentLength = data.Length;
+
+            using (Stream newStream = request.GetRequestStream())
+            {
+                newStream.Write(data, 0, data.Length);
+                newStream.Flush();
+                newStream.Close();
+            }
+
+            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+            StreamReader reader = new StreamReader(response.GetResponseStream());
+            string jsonData = reader.ReadToEnd();
+            var obj = JsonConvert.DeserializeObject<T>(jsonData);
+            reader.Close();
+            response.Close();
+
+            return obj;
         }
 
         /// <summary>
@@ -750,68 +464,36 @@ namespace ServiceConnect
         /// <returns></returns>
         public async Task<string> PUT(string requestUrl, string responseObject, string contentType = "application/json")
         {
-            try
+            byte[] data = Encoding.UTF8.GetBytes(responseObject);
+
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
+            request.Method = WebRequestMethods.Http.Put;
+            request.ContentType = contentType;
+
+            if (IsAuthorization)
             {
-                byte[] data = Encoding.UTF8.GetBytes(responseObject);
-
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
-                request.Method = WebRequestMethods.Http.Put;
-                request.ContentType = contentType;
-
-                if (!IsTokenBased)
-                    request.Credentials = GetCredential(requestUrl);
-                else
-                    request.Headers.Add("Authorization", GetToken());
-
-                request.ContentLength = data.Length;
-
-                using (Stream newStream = request.GetRequestStream())
-                {
-                    newStream.Write(data, 0, data.Length);
-                    newStream.Flush();
-                    newStream.Close();
-                }
-
-                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-                StreamReader reader = new StreamReader(response.GetResponseStream());
-                string jsonData = reader.ReadToEnd();
-                reader.Close();
-                response.Close();
-
-                return jsonData;
-            }
-            catch (Exception)
-            {
-                TokenManager.TokenClear();
-
-                byte[] data = Encoding.UTF8.GetBytes(responseObject);
-
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
-                request.Method = WebRequestMethods.Http.Put;
-                request.ContentType = contentType;
-
                 if (!IsTokenBased)
                     request.Headers.Add("Authorization", GetBasic());
                 else
                     request.Headers.Add("Authorization", GetToken());
-
-                request.ContentLength = data.Length;
-
-                using (Stream newStream = request.GetRequestStream())
-                {
-                    newStream.Write(data, 0, data.Length);
-                    newStream.Flush();
-                    newStream.Close();
-                }
-
-                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-                StreamReader reader = new StreamReader(response.GetResponseStream());
-                string jsonData = reader.ReadToEnd();
-                reader.Close();
-                response.Close();
-
-                return jsonData;
             }
+
+            request.ContentLength = data.Length;
+
+            using (Stream newStream = request.GetRequestStream())
+            {
+                newStream.Write(data, 0, data.Length);
+                newStream.Flush();
+                newStream.Close();
+            }
+
+            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+            StreamReader reader = new StreamReader(response.GetResponseStream());
+            string jsonData = reader.ReadToEnd();
+            reader.Close();
+            response.Close();
+
+            return jsonData;
         }
 
         /// <summary>
@@ -823,48 +505,26 @@ namespace ServiceConnect
         /// <returns></returns>
         public async Task<T> DELETE<T>(string requestUrl, string contentType = "application/json")
         {
-            try
-            {
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
-                request.Method = "DELETE";
-                request.Accept = contentType;
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
+            request.Method = "DELETE";
+            request.ContentType = contentType;
 
+            if (IsAuthorization)
+            {
                 if (!IsTokenBased)
-                    request.Credentials = GetCredential(requestUrl);
+                    request.Headers.Add("Authorization", GetBasic());
                 else
                     request.Headers.Add("Authorization", GetToken());
-
-                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-                StreamReader reader = new StreamReader(response.GetResponseStream());
-                string jsonData = reader.ReadToEnd();
-                var obj = JsonConvert.DeserializeObject<T>(jsonData);
-                reader.Close();
-                response.Close();
-
-                return obj;
             }
-            catch (Exception)
-            {
-                TokenManager.TokenClear();
 
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
-                request.Method = "DELETE";
-                request.Accept = "application/json";
+            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+            StreamReader reader = new StreamReader(response.GetResponseStream());
+            string jsonData = reader.ReadToEnd();
+            var obj = JsonConvert.DeserializeObject<T>(jsonData);
+            reader.Close();
+            response.Close();
 
-                if (!IsTokenBased)
-                    request.Credentials = GetCredential(requestUrl);
-                else
-                    request.Headers.Add("Authorization", GetToken());
-
-                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-                StreamReader reader = new StreamReader(response.GetResponseStream());
-                string jsonData = reader.ReadToEnd();
-                var obj = JsonConvert.DeserializeObject<T>(jsonData);
-                reader.Close();
-                response.Close();
-
-                return obj;
-            }
+            return obj;
         }
 
         /// <summary>
@@ -876,46 +536,25 @@ namespace ServiceConnect
         /// <returns></returns>
         public async Task<string> DELETE(string requestUrl, string contentType = "application/json")
         {
-            try
-            {
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
-                request.Method = "DELETE";
-                request.Accept = contentType;
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
+            request.Method = "DELETE";
+            request.ContentType = contentType;
 
+            if (IsAuthorization)
+            {
                 if (!IsTokenBased)
-                    request.Credentials = GetCredential(requestUrl);
+                    request.Headers.Add("Authorization", GetBasic());
                 else
                     request.Headers.Add("Authorization", GetToken());
-
-                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-                StreamReader reader = new StreamReader(response.GetResponseStream());
-                string jsonData = reader.ReadToEnd();
-                reader.Close();
-                response.Close();
-
-                return jsonData;
             }
-            catch (Exception)
-            {
-                TokenManager.TokenClear();
 
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
-                request.Method = "DELETE";
-                request.Accept = "application/json";
+            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+            StreamReader reader = new StreamReader(response.GetResponseStream());
+            string jsonData = reader.ReadToEnd();
+            reader.Close();
+            response.Close();
 
-                if (!IsTokenBased)
-                    request.Credentials = GetCredential(requestUrl);
-                else
-                    request.Headers.Add("Authorization", GetToken());
-
-                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-                StreamReader reader = new StreamReader(response.GetResponseStream());
-                string jsonData = reader.ReadToEnd();
-                reader.Close();
-                response.Close();
-
-                return jsonData;
-            }
+            return jsonData;
         }
 
         /// <summary>
@@ -926,9 +565,8 @@ namespace ServiceConnect
         /// <returns></returns>
         public async Task<string> REQUEST(string requestUrl, Request obj)
         {
-            TokenManager.TokenClear();
-            if(obj==null)
-                obj=new Request();
+            if (obj == null)
+                obj = new Request();
 
             byte[] data = null;
 
@@ -981,7 +619,6 @@ namespace ServiceConnect
         /// <returns></returns>
         public async Task<T> REQUEST<T>(string requestUrl, Request obj)
         {
-            TokenManager.TokenClear();
             if (obj == null)
                 obj = new Request();
 
