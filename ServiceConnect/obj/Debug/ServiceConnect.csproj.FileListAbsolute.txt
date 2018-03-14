@@ -33,3 +33,15 @@ D:\GitHub\ServiceConnect\ServiceConnect\bin\Debug\Newtonsoft.Json.xml
 D:\GitHub\ServiceConnect\ServiceConnect\obj\Debug\ServiceConnect.dll
 D:\GitHub\ServiceConnect\ServiceConnect\obj\Debug\ServiceConnect.pdb
 D:\GitHub\ServiceConnect\ServiceConnect\obj\Debug\ServiceConnect.csprojResolveAssemblyReference.cache
+D:\Okan'sProjects\ServiceConnect\ServiceConnect\obj\Debug\ServiceConnect.csprojResolveAssemblyReference.cache
+D:\Okan'sProjects\ServiceConnect\ServiceConnect\obj\Debug\ServiceConnect.csproj.CoreCompileInputs.cache
+D:\Okan'sProjects\ServiceConnect\ServiceConnect\bin\Debug\ServiceConnect.dll
+D:\Okan'sProjects\ServiceConnect\ServiceConnect\bin\Debug\ServiceConnect.pdb
+D:\Okan'sProjects\ServiceConnect\ServiceConnect\obj\Debug\ServiceConnect.dll
+D:\Okan'sProjects\ServiceConnect\ServiceConnect\obj\Debug\ServiceConnect.pdb
+C:\Users\sami\Documents\GitHub\ServiceConnect\ServiceConnect\bin\Debug\ServiceConnect.dll
+C:\Users\sami\Documents\GitHub\ServiceConnect\ServiceConnect\bin\Debug\ServiceConnect.pdb
+C:\Users\sami\Documents\GitHub\ServiceConnect\ServiceConnect\obj\Debug\ServiceConnect.csprojResolveAssemblyReference.cache
+C:\Users\sami\Documents\GitHub\ServiceConnect\ServiceConnect\obj\Debug\ServiceConnect.csproj.CoreCompileInputs.cache
+C:\Users\sami\Documents\GitHub\ServiceConnect\ServiceConnect\obj\Debug\ServiceConnect.dll
+C:\Users\sami\Documents\GitHub\ServiceConnect\ServiceConnect\obj\Debug\ServiceConnect.pdb

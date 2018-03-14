@@ -3,36 +3,44 @@ using System.IO;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 using ServiceConnect.Object;
 
-
+// ReSharper disable once CheckNamespace
 namespace ServiceConnect
 {
     public class HttpServiceAsyncRequest
     {
-        private string UserName, Password, TokenUrl, TokenString = String.Empty;
+        // ReSharper disable once FieldCanBeMadeReadOnly.Local
+        private string _userName;
+        // ReSharper disable once FieldCanBeMadeReadOnly.Local
+        private string _password;
+        // ReSharper disable once FieldCanBeMadeReadOnly.Local
+        private string _tokenUrl;
+        // ReSharper disable once FieldCanBeMadeReadOnly.Local
+        private string _tokenString = String.Empty;
 
-        private bool IsTokenBased    = false;
-        private bool IsAuthorization = true;
+        // ReSharper disable once FieldCanBeMadeReadOnly.Local
+        private bool _isTokenBased;
+        // ReSharper disable once FieldCanBeMadeReadOnly.Local
+        private bool _isAuthorization = true;
 
         /// <summary>
         /// Not Authentication.
         /// </summary>
         public HttpServiceAsyncRequest()
         {
-            IsAuthorization = false;
+            _isAuthorization = false;
         }
 
         /// <summary>
         /// Basic Authentication.
         /// </summary>
-        /// <param name="UserName"></param>
-        /// <param name="Password"></param>
-        public HttpServiceAsyncRequest(string UserName, string Password)
+        /// <param name="userName"></param>
+        /// <param name="password"></param>
+        public HttpServiceAsyncRequest(string userName, string password)
         {
-            this.UserName = UserName;
-            this.Password = Password;
+            _userName = userName;
+            _password = password;
         }
 
         /// <summary>
@@ -41,23 +49,23 @@ namespace ServiceConnect
         /// <param name="token"></param>
         public HttpServiceAsyncRequest(string token)
         {
-            TokenString = token;
-            IsTokenBased = true;
+            _tokenString = token;
+            _isTokenBased = true;
         }
 
         /// <summary>
         /// Token Based Authentication.
         /// </summary>
-        /// <param name="UserName"></param>
-        /// <param name="Password"></param>
-        /// <param name="TokenUrl"></param>
-        public HttpServiceAsyncRequest(string UserName, string Password, string TokenUrl)
+        /// <param name="userName"></param>
+        /// <param name="password"></param>
+        /// <param name="tokenUrl"></param>
+        public HttpServiceAsyncRequest(string userName, string password, string tokenUrl)
         {
-            this.UserName = UserName;
-            this.Password = Password;
-            this.TokenUrl = TokenUrl;
+            _userName = userName;
+            _password = password;
+            _tokenUrl = tokenUrl;
 
-            IsTokenBased = true;
+            _isTokenBased = true;
         }
 
         /// <summary>
@@ -66,10 +74,10 @@ namespace ServiceConnect
         /// <returns></returns>
         private string GetToken()
         {
-            if (TokenString == String.Empty)
-                return TokenManager.GetToken(UserName, Password, TokenUrl);
+            if (_tokenString == String.Empty)
+                return TokenManager.GetToken(_userName, _password, _tokenUrl);
             else
-                return TokenString;
+                return _tokenString;
         }
 
 
@@ -79,7 +87,7 @@ namespace ServiceConnect
         /// <returns></returns>
         private string GetBasic()
         {
-            String encoded = Convert.ToBase64String(Encoding.GetEncoding("ISO-8859-1").GetBytes(UserName + ":" + Password));
+            String encoded = Convert.ToBase64String(Encoding.GetEncoding("ISO-8859-1").GetBytes(_userName + ":" + _password));
             return "Basic " + encoded;
         }
 
@@ -89,25 +97,29 @@ namespace ServiceConnect
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="requestUrl"></param>
+        /// <param name="timeOut"></param>
+        /// <param name="contentType"></param>
         /// <returns></returns>
-        public async Task<T> GET<T>(string requestUrl, string contentType = "application/json")
+        // ReSharper disable once InconsistentNaming
+        public async Task<T> GET<T>(string requestUrl, int timeOut = 0, string contentType = "application/json")
         {
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
             request.Method = WebRequestMethods.Http.Get;
             request.ContentType = contentType;
 
-            if (IsAuthorization)
+            if (timeOut > 0)
+                request.Timeout = timeOut;
+
+            if (_isAuthorization)
             {
-                if (!IsTokenBased)
-                    request.Headers.Add("Authorization", GetBasic());
-                else
-                    request.Headers.Add("Authorization", GetToken());
+                request.Headers.Add("Authorization", !_isTokenBased ? GetBasic() : GetToken());
             }
 
-            HttpWebResponse response =  (HttpWebResponse)request.GetResponse();
+            WebResponse  response = await request.GetResponseAsync();
+            // ReSharper disable once AssignNullToNotNullAttribute
             StreamReader reader =  new StreamReader(response.GetResponseStream());
             string jsonData = reader.ReadToEnd();
-            var obj = JsonConvert.DeserializeObject<T>(jsonData);
+            var obj = ResultConvert.Deserialize<T>(jsonData);
             reader.Close();
             response.Close();
 
@@ -119,25 +131,28 @@ namespace ServiceConnect
         /// Parametre olarak gönderilen Url adresine Http Get isteğinde bulunur.
         /// Geriye Json formatında String Döndürür.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
         /// <param name="requestUrl"></param>
+        /// <param name="timeOut"></param>
+        /// <param name="contentType"></param>
         /// <returns></returns>
-        public async Task<string> GET(string requestUrl, string contentType = "application/json")
+        // ReSharper disable once InconsistentNaming
+        public async Task<string> GET(string requestUrl, int timeOut = 0, string contentType = "application/json")
         {
 
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
             request.Method = WebRequestMethods.Http.Get;
             request.Accept = contentType;
 
-            if (IsAuthorization)
+            if (timeOut > 0)
+                request.Timeout = timeOut;
+
+            if (_isAuthorization)
             {
-                if (!IsTokenBased)
-                    request.Headers.Add("Authorization", GetBasic());
-                else
-                    request.Headers.Add("Authorization", GetToken());
+                request.Headers.Add("Authorization", !_isTokenBased ? GetBasic() : GetToken());
             }
 
-            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+            WebResponse response = await request.GetResponseAsync();
+            // ReSharper disable once AssignNullToNotNullAttribute
             StreamReader reader = new StreamReader(response.GetResponseStream());
             string jsonData = reader.ReadToEnd();
             reader.Close();
@@ -154,22 +169,25 @@ namespace ServiceConnect
         /// <typeparam name="T"></typeparam>
         /// <param name="requestUrl"></param>
         /// <param name="responseObject"></param>
+        /// <param name="timeOut"></param>
+        /// <param name="contentType"></param>
         /// <returns></returns>
-        public async Task<T> POST<T>(string requestUrl, object responseObject, string contentType = "application/json")
+        // ReSharper disable once InconsistentNaming
+        public async Task<T> POST<T>(string requestUrl, object responseObject, int timeOut = 0, string contentType = null)
         {
-            string postData = JsonConvert.SerializeObject(responseObject);
+            string postData = ResultConvert.Serialize(responseObject);
             byte[] data = Encoding.UTF8.GetBytes(postData);
 
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
             request.Method = WebRequestMethods.Http.Post;
-            request.ContentType = contentType;
+            request.ContentType = contentType ?? "application/json";
 
-            if (IsAuthorization)
+            if (timeOut > 0)
+                request.Timeout = timeOut;
+
+            if (_isAuthorization)
             {
-                if (!IsTokenBased)
-                    request.Headers.Add("Authorization", GetBasic());
-                else
-                    request.Headers.Add("Authorization", GetToken());
+                request.Headers.Add("Authorization", !_isTokenBased ? GetBasic() : GetToken());
             }
 
             request.ContentLength = data.Length;
@@ -181,10 +199,11 @@ namespace ServiceConnect
                 newStream.Close();
             }
 
-            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+            WebResponse  response = await request.GetResponseAsync();
+            // ReSharper disable once AssignNullToNotNullAttribute
             StreamReader reader = new StreamReader(response.GetResponseStream());
             string jsonData = reader.ReadToEnd();
-            var obj = JsonConvert.DeserializeObject<T>(jsonData);
+            var obj = ResultConvert.Deserialize<T>(jsonData);
             reader.Close();
             response.Close();
 
@@ -198,21 +217,24 @@ namespace ServiceConnect
         /// <typeparam name="T"></typeparam>
         /// <param name="requestUrl"></param>
         /// <param name="responseObject"></param>
+        /// <param name="timeOut"></param>
+        /// <param name="contentType"></param>
         /// <returns></returns>
-        public async Task<T> POST<T>(string requestUrl, string responseObject, string contentType = "application/json")
+        // ReSharper disable once InconsistentNaming
+        public async Task<T> POST<T>(string requestUrl, string responseObject, int timeOut = 0, string contentType = null)
         {
             byte[] data = Encoding.UTF8.GetBytes(responseObject);
 
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
             request.Method = WebRequestMethods.Http.Post;
-            request.ContentType = contentType;
+            request.ContentType = contentType ?? "application/json";
 
-            if (IsAuthorization)
+            if (timeOut > 0)
+                request.Timeout = timeOut;
+
+            if (_isAuthorization)
             {
-                if (!IsTokenBased)
-                    request.Headers.Add("Authorization", GetBasic());
-                else
-                    request.Headers.Add("Authorization", GetToken());
+                request.Headers.Add("Authorization", !_isTokenBased ? GetBasic() : GetToken());
             }
 
             request.ContentLength = data.Length;
@@ -224,10 +246,11 @@ namespace ServiceConnect
                 newStream.Close();
             }
 
-            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+            WebResponse  response = await request.GetResponseAsync();
+            // ReSharper disable once AssignNullToNotNullAttribute
             StreamReader reader = new StreamReader(response.GetResponseStream());
             string jsonData = reader.ReadToEnd();
-            var obj = JsonConvert.DeserializeObject<T>(jsonData);
+            var obj = ResultConvert.Deserialize<T>(jsonData);
             reader.Close();
             response.Close();
 
@@ -238,25 +261,27 @@ namespace ServiceConnect
         /// Parametre olarak gönderilen Url adresine parametre olarak gönderilen objeyi json verisine çevirip Post eder.
         /// Geriye Json formatında String Döndürür.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
         /// <param name="requestUrl"></param>
         /// <param name="responseObject"></param>
+        /// <param name="timeOut"></param>
+        /// <param name="contentType"></param>
         /// <returns></returns>
-        public async Task<string> POST(string requestUrl, object responseObject, string contentType = "application/json")
+        // ReSharper disable once InconsistentNaming
+        public async Task<string> POST(string requestUrl, object responseObject, int timeOut = 0, string contentType = null)
         {
-            string postData = JsonConvert.SerializeObject(responseObject);
+            string postData = ResultConvert.Serialize(responseObject);
             byte[] data = Encoding.UTF8.GetBytes(postData);
 
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
             request.Method = WebRequestMethods.Http.Post;
-            request.ContentType = contentType;
+            request.ContentType = contentType ?? "application/json";
 
-            if (IsAuthorization)
+            if (timeOut > 0)
+                request.Timeout = timeOut;
+
+            if (_isAuthorization)
             {
-                if (!IsTokenBased)
-                    request.Headers.Add("Authorization", GetBasic());
-                else
-                    request.Headers.Add("Authorization", GetToken());
+                request.Headers.Add("Authorization", !_isTokenBased ? GetBasic() : GetToken());
             }
 
             request.ContentLength = data.Length;
@@ -268,7 +293,8 @@ namespace ServiceConnect
                 newStream.Close();
             }
 
-            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+            WebResponse  response = await request.GetResponseAsync();
+            // ReSharper disable once AssignNullToNotNullAttribute
             StreamReader reader = new StreamReader(response.GetResponseStream());
             string jsonData = reader.ReadToEnd();
             reader.Close();
@@ -281,24 +307,26 @@ namespace ServiceConnect
         /// Parametre olarak gönderilen Url adresine parametre olarak gönderilen objeyi json verisine çevirip Post eder.
         /// Geriye Json formatında String Döndürür.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
         /// <param name="requestUrl"></param>
         /// <param name="responseObject"></param>
+        /// <param name="timeOut"></param>
+        /// <param name="contentType"></param>
         /// <returns></returns>
-        public async Task<string> POST(string requestUrl, string responseObject, string contentType = "application/json")
+        // ReSharper disable once InconsistentNaming
+        public async Task<string> POST(string requestUrl, string responseObject, int timeOut = 0, string contentType = null)
         {
             byte[] data = Encoding.UTF8.GetBytes(responseObject);
 
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
             request.Method = WebRequestMethods.Http.Post;
-            request.ContentType = contentType;
+            request.ContentType = contentType ?? "application/json";
 
-            if (IsAuthorization)
+            if (timeOut > 0)
+                request.Timeout = timeOut;
+
+            if (_isAuthorization)
             {
-                if (!IsTokenBased)
-                    request.Headers.Add("Authorization", GetBasic());
-                else
-                    request.Headers.Add("Authorization", GetToken());
+                request.Headers.Add("Authorization", !_isTokenBased ? GetBasic() : GetToken());
             }
 
             request.ContentLength = data.Length;
@@ -310,7 +338,8 @@ namespace ServiceConnect
                 newStream.Close();
             }
 
-            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+            WebResponse  response = await request.GetResponseAsync();
+            // ReSharper disable once AssignNullToNotNullAttribute
             StreamReader reader = new StreamReader(response.GetResponseStream());
             string jsonData = reader.ReadToEnd();
             reader.Close();
@@ -327,22 +356,25 @@ namespace ServiceConnect
         /// <typeparam name="T"></typeparam>
         /// <param name="requestUrl"></param>
         /// <param name="responseObject"></param>
+        /// <param name="timeOut"></param>
+        /// <param name="contentType"></param>
         /// <returns></returns>
-        public async Task<T> PUT<T>(string requestUrl, object responseObject, string contentType = "application/json")
+        // ReSharper disable once InconsistentNaming
+        public async Task<T> PUT<T>(string requestUrl, object responseObject, int timeOut = 0, string contentType = null)
         {
-            string postData = JsonConvert.SerializeObject(responseObject);
+            string postData = ResultConvert.Serialize(responseObject);
             byte[] data = Encoding.UTF8.GetBytes(postData);
 
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
             request.Method = WebRequestMethods.Http.Put;
-            request.ContentType = contentType;
+            request.ContentType = contentType ?? "application/json";
 
-            if (IsAuthorization)
+            if (timeOut > 0)
+                request.Timeout = timeOut;
+
+            if (_isAuthorization)
             {
-                if (!IsTokenBased)
-                    request.Headers.Add("Authorization", GetBasic());
-                else
-                    request.Headers.Add("Authorization", GetToken());
+                request.Headers.Add("Authorization", !_isTokenBased ? GetBasic() : GetToken());
             }
 
             request.ContentLength = data.Length;
@@ -354,10 +386,11 @@ namespace ServiceConnect
                 newStream.Close();
             }
 
-            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+            WebResponse  response = await request.GetResponseAsync();
+            // ReSharper disable once AssignNullToNotNullAttribute
             StreamReader reader = new StreamReader(response.GetResponseStream());
             string jsonData = reader.ReadToEnd();
-            var obj = JsonConvert.DeserializeObject<T>(jsonData);
+            var obj = ResultConvert.Deserialize<T>(jsonData);
             reader.Close();
             response.Close();
 
@@ -369,25 +402,27 @@ namespace ServiceConnect
         /// Güncellemede kullanılır.
         /// Geriye Json formatında String Döndürür.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
         /// <param name="requestUrl"></param>
         /// <param name="responseObject"></param>
+        /// <param name="timeOut"></param>
+        /// <param name="contentType"></param>
         /// <returns></returns>
-        public async Task<string> PUT(string requestUrl, object responseObject, string contentType = "application/json")
+        // ReSharper disable once InconsistentNaming
+        public async Task<string> PUT(string requestUrl, object responseObject, int timeOut = 0, string contentType = null)
         {
-            string postData = JsonConvert.SerializeObject(responseObject);
+            string postData = ResultConvert.Serialize(responseObject);
             byte[] data = Encoding.UTF8.GetBytes(postData);
 
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
             request.Method = WebRequestMethods.Http.Put;
-            request.ContentType = contentType;
+            request.ContentType = contentType ?? "application/json";
 
-            if (IsAuthorization)
+            if (timeOut > 0)
+                request.Timeout = timeOut;
+
+            if (_isAuthorization)
             {
-                if (!IsTokenBased)
-                    request.Headers.Add("Authorization", GetBasic());
-                else
-                    request.Headers.Add("Authorization", GetToken());
+                request.Headers.Add("Authorization", !_isTokenBased ? GetBasic() : GetToken());
             }
 
             request.ContentLength = data.Length;
@@ -399,7 +434,8 @@ namespace ServiceConnect
                 newStream.Close();
             }
 
-            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+            WebResponse  response = await request.GetResponseAsync();
+            // ReSharper disable once AssignNullToNotNullAttribute
             StreamReader reader = new StreamReader(response.GetResponseStream());
             string jsonData = reader.ReadToEnd();
             reader.Close();
@@ -416,22 +452,25 @@ namespace ServiceConnect
         /// <typeparam name="T"></typeparam>
         /// <param name="requestUrl"></param>
         /// <param name="responseObject"></param>
+        /// <param name="timeOut"></param>
+        /// <param name="contentType"></param>
         /// <returns></returns>
-        public async Task<T> PUT<T>(string requestUrl, string responseObject, string contentType = "application/json")
+        // ReSharper disable once InconsistentNaming
+        public async Task<T> PUT<T>(string requestUrl, string responseObject, int timeOut = 0, string contentType = null)
         {
-            string postData = JsonConvert.SerializeObject(responseObject);
+            string postData = ResultConvert.Serialize(responseObject);
             byte[] data = Encoding.UTF8.GetBytes(postData);
 
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
             request.Method = WebRequestMethods.Http.Put;
-            request.ContentType = contentType;
+            request.ContentType = contentType ?? "application/json";
 
-            if (IsAuthorization)
+            if (timeOut > 0)
+                request.Timeout = timeOut;
+
+            if (_isAuthorization)
             {
-                if (!IsTokenBased)
-                    request.Headers.Add("Authorization", GetBasic());
-                else
-                    request.Headers.Add("Authorization", GetToken());
+                request.Headers.Add("Authorization", !_isTokenBased ? GetBasic() : GetToken());
             }
 
             request.ContentLength = data.Length;
@@ -443,10 +482,11 @@ namespace ServiceConnect
                 newStream.Close();
             }
 
-            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+            WebResponse  response = await request.GetResponseAsync();
+            // ReSharper disable once AssignNullToNotNullAttribute
             StreamReader reader = new StreamReader(response.GetResponseStream());
             string jsonData = reader.ReadToEnd();
-            var obj = JsonConvert.DeserializeObject<T>(jsonData);
+            var obj = ResultConvert.Deserialize<T>(jsonData);
             reader.Close();
             response.Close();
 
@@ -458,24 +498,26 @@ namespace ServiceConnect
         /// Güncellemede kullanılır.
         /// Geriye Json formatında String Döndürür.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
         /// <param name="requestUrl"></param>
         /// <param name="responseObject"></param>
+        /// <param name="timeOut"></param>
+        /// <param name="contentType"></param>
         /// <returns></returns>
-        public async Task<string> PUT(string requestUrl, string responseObject, string contentType = "application/json")
+        // ReSharper disable once InconsistentNaming
+        public async Task<string> PUT(string requestUrl, string responseObject, int timeOut = 0, string contentType = null)
         {
             byte[] data = Encoding.UTF8.GetBytes(responseObject);
 
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
             request.Method = WebRequestMethods.Http.Put;
-            request.ContentType = contentType;
+            request.ContentType = contentType ?? "application/json";
 
-            if (IsAuthorization)
+            if (timeOut > 0)
+                request.Timeout = timeOut;
+
+            if (_isAuthorization)
             {
-                if (!IsTokenBased)
-                    request.Headers.Add("Authorization", GetBasic());
-                else
-                    request.Headers.Add("Authorization", GetToken());
+                request.Headers.Add("Authorization", !_isTokenBased ? GetBasic() : GetToken());
             }
 
             request.ContentLength = data.Length;
@@ -487,7 +529,8 @@ namespace ServiceConnect
                 newStream.Close();
             }
 
-            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+            WebResponse  response = await request.GetResponseAsync();
+            // ReSharper disable once AssignNullToNotNullAttribute
             StreamReader reader = new StreamReader(response.GetResponseStream());
             string jsonData = reader.ReadToEnd();
             reader.Close();
@@ -502,25 +545,29 @@ namespace ServiceConnect
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="requestUrl"></param>
+        /// <param name="timeOut"></param>
+        /// <param name="contentType"></param>
         /// <returns></returns>
-        public async Task<T> DELETE<T>(string requestUrl, string contentType = "application/json")
+        // ReSharper disable once InconsistentNaming
+        public async Task<T> DELETE<T>(string requestUrl, int timeOut = 0, string contentType = null)
         {
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
             request.Method = "DELETE";
-            request.ContentType = contentType;
+            request.ContentType = contentType ?? "application/json";
 
-            if (IsAuthorization)
+            if (timeOut > 0)
+                request.Timeout = timeOut;
+
+            if (_isAuthorization)
             {
-                if (!IsTokenBased)
-                    request.Headers.Add("Authorization", GetBasic());
-                else
-                    request.Headers.Add("Authorization", GetToken());
+                request.Headers.Add("Authorization", !_isTokenBased ? GetBasic() : GetToken());
             }
 
-            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+            WebResponse  response = await request.GetResponseAsync();
+            // ReSharper disable once AssignNullToNotNullAttribute
             StreamReader reader = new StreamReader(response.GetResponseStream());
             string jsonData = reader.ReadToEnd();
-            var obj = JsonConvert.DeserializeObject<T>(jsonData);
+            var obj = ResultConvert.Deserialize<T>(jsonData);
             reader.Close();
             response.Close();
 
@@ -531,24 +578,27 @@ namespace ServiceConnect
         /// Parametre olarak gönderilen Url adresine Http Delete isteğinde bulunur.
         /// Geriye Json formatında String Döndürür.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
         /// <param name="requestUrl"></param>
+        /// <param name="timeOut"></param>
+        /// <param name="contentType"></param>
         /// <returns></returns>
-        public async Task<string> DELETE(string requestUrl, string contentType = "application/json")
+        // ReSharper disable once InconsistentNaming
+        public async Task<string> DELETE(string requestUrl, int timeOut = 0, string contentType = null)
         {
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(requestUrl);
             request.Method = "DELETE";
-            request.ContentType = contentType;
+            request.ContentType = contentType ?? "application/json";
 
-            if (IsAuthorization)
+            if (timeOut > 0)
+                request.Timeout = timeOut;
+
+            if (_isAuthorization)
             {
-                if (!IsTokenBased)
-                    request.Headers.Add("Authorization", GetBasic());
-                else
-                    request.Headers.Add("Authorization", GetToken());
+                request.Headers.Add("Authorization", !_isTokenBased ? GetBasic() : GetToken());
             }
 
-            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+            WebResponse  response = await request.GetResponseAsync();
+            // ReSharper disable once AssignNullToNotNullAttribute
             StreamReader reader = new StreamReader(response.GetResponseStream());
             string jsonData = reader.ReadToEnd();
             reader.Close();
@@ -563,6 +613,7 @@ namespace ServiceConnect
         /// <param name="requestUrl"></param>
         /// <param name="obj"></param>
         /// <returns></returns>
+        // ReSharper disable once InconsistentNaming
         public async Task<string> REQUEST(string requestUrl, Request obj)
         {
             if (obj == null)
@@ -577,8 +628,10 @@ namespace ServiceConnect
 
             if (obj.Method != null)
                 request.Method = obj.Method;
-            if (obj.Content_Type != null)
-                request.ContentType = obj.Content_Type;
+            if (obj.ContentType != null)
+                request.ContentType = obj.ContentType;
+            else
+                request.ContentType = "application/json";
             if (obj.Authorization != null)
                 request.Headers.Add("Authorization", obj.Authorization);
             if (obj.Headers != null)
@@ -588,6 +641,9 @@ namespace ServiceConnect
                     request.Headers.Add(item);
                 }
             }
+
+            if (obj.TimeOut > 0)
+                request.Timeout = obj.TimeOut;
 
             if (data != null)
             {
@@ -600,7 +656,8 @@ namespace ServiceConnect
                 }
             }
 
-            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+            WebResponse  response = await request.GetResponseAsync();
+            // ReSharper disable once AssignNullToNotNullAttribute
             StreamReader reader = new StreamReader(response.GetResponseStream());
             string jsonData = reader.ReadToEnd();
             reader.Close();
@@ -617,6 +674,7 @@ namespace ServiceConnect
         /// <param name="requestUrl"></param>
         /// <param name="obj"></param>
         /// <returns></returns>
+        // ReSharper disable once InconsistentNaming
         public async Task<T> REQUEST<T>(string requestUrl, Request obj)
         {
             if (obj == null)
@@ -631,8 +689,10 @@ namespace ServiceConnect
 
             if (obj.Method != null)
                 request.Method = obj.Method;
-            if (obj.Content_Type != null)
-                request.ContentType = obj.Content_Type;
+            if (obj.ContentType != null)
+                request.ContentType = obj.ContentType;
+            else
+                request.ContentType = "application/json";
             if (obj.Authorization != null)
                 request.Headers.Add("Authorization", obj.Authorization);
             if (obj.Headers != null)
@@ -642,6 +702,9 @@ namespace ServiceConnect
                     request.Headers.Add(item);
                 }
             }
+
+            if (obj.TimeOut > 0)
+                request.Timeout = obj.TimeOut;
 
             if (data != null)
             {
@@ -654,10 +717,11 @@ namespace ServiceConnect
                 }
             }
 
-            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+            WebResponse  response = await request.GetResponseAsync();
+            // ReSharper disable once AssignNullToNotNullAttribute
             StreamReader reader = new StreamReader(response.GetResponseStream());
             string jsonData = reader.ReadToEnd();
-            var responseObject = JsonConvert.DeserializeObject<T>(jsonData);
+            var responseObject = ResultConvert.Deserialize<T>(jsonData);
             reader.Close();
             response.Close();
 

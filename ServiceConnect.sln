@@ -1,11 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.27130.2027
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServiceConnect", "ServiceConnect\ServiceConnect.csproj", "{925A4635-9023-4AAB-A8C3-4780B84408F0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServiceConnectTest", "ServiceConnectTest\ServiceConnectTest.csproj", "{F9B9EF8F-37D3-4F62-8E57-E9A2E25CA21F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "ServiceConnectTest\Test.csproj", "{F9B9EF8F-37D3-4F62-8E57-E9A2E25CA21F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -25,6 +25,9 @@ Global
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4C69909F-5DEF-4743-8E53-D3CD4F1CDC03}
+	EndGlobalSection
 	GlobalSection(TeamFoundationVersionControl) = preSolution
 		SccNumberOfProjects = 3
 		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
@@ -33,7 +36,7 @@ Global
 		SccProjectUniqueName1 = ServiceConnect\\ServiceConnect.csproj
 		SccProjectName1 = ServiceConnect
 		SccLocalPath1 = ServiceConnect
-		SccProjectUniqueName2 = ServiceConnectTest\\ServiceConnectTest.csproj
+		SccProjectUniqueName2 = ServiceConnectTest\\Test.csproj
 		SccProjectName2 = ServiceConnectTest
 		SccLocalPath2 = ServiceConnectTest
 	EndGlobalSection
